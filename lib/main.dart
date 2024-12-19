@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'mahasiswa_controller.dart';
+import 'mahasiswa_controller.dart'; // Import controller yang sudah Anda buat
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -12,79 +12,60 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Flutter GetX Example',
+      title: 'Mahasiswa App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(),
+      home: HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+class HomePage extends StatelessWidget {
+  // Membuat instance controller
+  final MahasiswaController mahasiswaController =
+      Get.put(MahasiswaController());
 
-  @override
-  // ignore: library_private_types_in_public_api
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  final mahasiswaController = Get.put(MahasiswaController());
+  HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter GetX Example'),
+        title: Text('Data Mahasiswa'),
       ),
-      body: Column(
-        children: [
-          // Data mahasiswa
-          Expanded(
-            child: Obx(
-              () => FutureBuilder<List<Map<String, dynamic>>>(
-                future: mahasiswaController.getMahasiswaData(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (snapshot.hasData) {
-                    final mahasiswaData = snapshot.data!;
-                    return ListView.builder(
-                      itemCount: mahasiswaData.length,
-                      itemBuilder: (context, index) {
-                        final mahasiswa = mahasiswaData[index];
-                        return ListTile(
-                          title: Text(mahasiswa['nama']),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('NIM: ${mahasiswa['nim']}'),
-                              Text('Alamat: ${mahasiswa['alamat']}'),
-                              Text('Jurusan: ${mahasiswa['jurusan']}'),
-                              Text('Umur: ${mahasiswa['umur']}'),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-                  } else {
-                    return const Center(child: Text('No data found'));
-                  }
-                },
-              ),
-            ),
-          ),
-        ],
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: mahasiswaController.getMahasiswaData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (snapshot.data == null || snapshot.data!.isEmpty) {
+            return Center(child: Text('Data tidak ditemukan.'));
+          } else {
+            var mahasiswaList = snapshot.data!;
+            return ListView.builder(
+              itemCount: mahasiswaList.length,
+              itemBuilder: (context, index) {
+                var mahasiswa = mahasiswaList[index];
+                return ListTile(
+                  title: Text(mahasiswa['nama']),
+                  subtitle: Text(
+                      'Jurusan: ${mahasiswa['jurusan']}, Alamat: ${mahasiswa['alamat']}'),
+                );
+              },
+            );
+          }
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Action to add new mahasiswa or perform other actions
+          // Call the updateAlamat method
+          // mahasiswaController.updateAlamat('Jl. Baru No. 1');
         },
-        tooltip: 'Add Mahasiswa',
-        child: const Icon(Icons.add),
+        tooltip: 'Update Alamat',
+        child: Icon(Icons.update),
       ),
     );
   }

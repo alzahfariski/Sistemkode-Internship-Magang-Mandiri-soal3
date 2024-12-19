@@ -13,46 +13,55 @@ class MahasiswaController extends GetxController {
     final path = join(dbPath, 'mahasiswa.db');
     return await openDatabase(path, version: 1, onCreate: (db, version) {
       // Create tables
-      db.execute('''
-        CREATE TABLE mahasiswa (
-          nim INTEGER PRIMARY KEY,
-          nama TEXT,
-          alamat TEXT,
-          jurusan TEXT,
-          umur INTEGER
-        )
-      ''');
+      db.execute('''CREATE TABLE mahasiswa (
+        nim INTEGER PRIMARY KEY,
+        nama TEXT,
+        alamat TEXT,
+        jurusan TEXT,
+        umur INTEGER
+      )''');
 
-      db.execute('''
-        CREATE TABLE mataKuliah (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          mataKuliah TEXT,
-          nim INTEGER,
-          nilai INTEGER,
-          dosen TEXT,
-          FOREIGN KEY (nim) REFERENCES mahasiswa (nim)
-        )
-      ''');
+      db.execute('''CREATE TABLE mataKuliah (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mataKuliah TEXT,
+        nim INTEGER,
+        nilai INTEGER,
+        dosen TEXT,
+        FOREIGN KEY (nim) REFERENCES mahasiswa (nim)
+      )''');
     });
   }
 
-  // Update alamat mahasiswa with NIM '123456'
-  Future<void> updateAlamat(String newAlamat) async {
+  // Update any field for a specific mahasiswa using NIM
+  Future<void> updateMahasiswa(
+      int nim, Map<String, dynamic> updatedData) async {
     final db = await database;
-    await db.update('mahasiswa', {'alamat': newAlamat},
-        where: 'nim = ?', whereArgs: ['123456']);
+    try {
+      await db
+          .update('mahasiswa', updatedData, where: 'nim = ?', whereArgs: [nim]);
+    } catch (e) {
+      throw Exception(e);
+    }
   }
 
-  // Get data from database
+  // Get mahasiswa data from database
   Future<List<Map<String, dynamic>>> getMahasiswaData() async {
     final db = await database;
-    return await db.query('mahasiswa');
+    try {
+      return await db.query('mahasiswa');
+    } catch (e) {
+      return [];
+    }
   }
 
-  // Get data from database
+  // Get mata kuliah data from database
   Future<List<Map<String, dynamic>>> getMataKuliahData() async {
     final db = await database;
-    return await db.query('mataKuliah');
+    try {
+      return await db.query('mataKuliah');
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
@@ -66,7 +75,6 @@ class MahasiswaController extends GetxController {
   Future<void> populateDatabase() async {
     final db = await database;
 
-    // Mahasiswa ```dart
     List<Map<String, dynamic>> mahasiswaList = [
       {
         'nim': 123456,
@@ -82,45 +90,13 @@ class MahasiswaController extends GetxController {
         'jurusan': 'Sistem Informasi',
         'umur': 23
       },
-      {
-        'nim': 345678,
-        'nama': 'Bob',
-        'alamat': 'Jl. Sudirman No. 5',
-        'jurusan': 'Teknik Informatika',
-        'umur': 20
-      },
-      {
-        'nim': 456789,
-        'nama': 'Cindy',
-        'alamat': 'Jl. Pahlawan No. 2',
-        'jurusan': 'Manajemen',
-        'umur': 22
-      },
-      {
-        'nim': 567890,
-        'nama': 'David',
-        'alamat': 'Jl. Diponegoro No. 3',
-        'jurusan': 'Teknik Elektro',
-        'umur': 25
-      },
-      {
-        'nim': 678901,
-        'nama': 'Emily',
-        'alamat': 'Jl. Cendrawasih No. 4',
-        'jurusan': 'Manajemen',
-        'umur': 24
-      },
-      {
-        'nim': 789012,
-        'nama': 'Frank',
-        'alamat': 'Jl. Ahmad Yani No. 6',
-        'jurusan': 'Teknik Informatika',
-        'umur': 19
-      },
+      // Add more students here...
     ];
 
+    // Insert mahasiswa data if empty
     for (var mahasiswa in mahasiswaList) {
-      await db.insert('mahasiswa', mahasiswa);
+      await db.insert('mahasiswa', mahasiswa,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
     }
 
     List<Map<String, dynamic>> mataKuliahList = [
@@ -136,80 +112,50 @@ class MahasiswaController extends GetxController {
         'nilai': 70,
         'dosen': 'Ibu Ani'
       },
-      {
-        'mataKuliah': 'Jaringan Komputer',
-        'nim': 345678,
-        'nilai': 75,
-        'dosen': 'Pak Dodi'
-      },
-      {
-        'mataKuliah': 'Sistem Operasi',
-        'nim': 123456,
-        'nilai': 90,
-        'dosen': 'Pak Budi'
-      },
-      {
-        'mataKuliah': 'Manajemen Proyek',
-        'nim': 456789,
-        'nilai': 80,
-        'dosen': 'Ibu Desi'
-      },
-      {
-        'mataKuliah': 'Bahasa Inggris',
-        'nim': 567890,
-        'nilai': 85,
-        'dosen': 'Ibu Eka'
-      },
-      {
-        'mataKuliah': 'Statistika',
-        'nim': 678901,
-        'nilai': 75,
-        'dosen': 'Pak Farhan'
-      },
-      {
-        'mataKuliah': 'Algoritma',
-        'nim': 789012,
-        'nilai': 65,
-        'dosen': 'Ibu Siti'
-      },
-      {
-        'mataKuliah': 'Pemrograman Java',
-        'nim': 123456,
-        'nilai': 95,
-        'dosen': 'Pak Budi'
-      },
+      // Add more courses here...
     ];
 
+    // Insert mata kuliah data if empty
     for (var mataKuliah in mataKuliahList) {
-      await db.insert('mataKuliah', mataKuliah);
+      await db.insert('mataKuliah', mataKuliah,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
     }
   }
 
-  // Tampilkan NIM, nama, dan jurusan dari mahasiswa yang memiliki jurusan 
-  // ‘Teknik Informatika’, serta tampilkan juga nama dosen pembimbingnya
+  // Fetch mahasiswa based on the 'Teknik Informatika' major
   Future<List<Map<String, dynamic>>> getMahasiswaTeknikInformatika() async {
     final db = await database;
-    return await db.query('mahasiswa',
-        where: 'jurusan = ?', whereArgs: ['Teknik Informatika']);
+    try {
+      return await db.query('mahasiswa',
+          where: 'jurusan = ?', whereArgs: ['Teknik Informatika']);
+    } catch (e) {
+      return [];
+    }
   }
 
-  // Tampilkan 5 nama mahasiswa dengan umur tertua.
+  // Get 5 oldest mahasiswa
   Future<List<Map<String, dynamic>>> getMahasiswaTertua() async {
     final db = await database;
-    return await db.query('mahasiswa', orderBy: 'umur DESC', limit: 5);
+    try {
+      return await db.query('mahasiswa', orderBy: 'umur DESC', limit: 5);
+    } catch (e) {
+      return [];
+    }
   }
 
-  // Tampilkan nama mahasiswa, mata kuliah yang diambil, dan nilai yang 
-  // diperoleh untuk setiap mata kuliah. Hanya tampilkan data mahasiswa 
-  // yang memiliki nilai lebih bagus dari 70.
+  // Fetch mahasiswa with grades above 70
   Future<List<Map<String, dynamic>>> getMahasiswaDenganNilaiBaik() async {
     final db = await database;
-    final result = await db.rawQuery('''
-    SELECT m.nama, mk.mataKuliah, mk.nilai 
-    FROM mahasiswa m 
-    JOIN mataKuliah mk ON m.nim = mk.nim 
-    WHERE mk.nilai > 70
-  ''');
-    return result;
+    try {
+      final result = await db.rawQuery('''
+        SELECT m.nama, mk.mataKuliah, mk.nilai 
+        FROM mahasiswa m 
+        JOIN mataKuliah mk ON m.nim = mk.nim 
+        WHERE mk.nilai > 70
+      ''');
+      return result;
+    } catch (e) {
+      return [];
+    }
   }
 }
